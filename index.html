@@ -78,6 +78,12 @@
   <!-- 8. 普通 URL 对照，确认浏览器本身能跳外链 -->
   <a class="btn alt" href="https://www.baidu.com" target="_blank" rel="noopener">⑧ 对照：打开普通网页(baidu)</a>
 
+  <!-- 9. 用 window.location.href 触发 intent（绕过 <a> 点击拦截层测试） -->
+  <button class="btn" id="locJump" style="background:#7a4d00">⑨ location.href 跳开发者选项 <span class="tag">换触发方式</span></button>
+
+  <!-- 10. 用隐藏 iframe 触发 intent（另一条绕过拦截的路） -->
+  <button class="btn" id="iframeJump" style="background:#00695c">⑩ iframe 跳系统设置主页 <span class="tag">换触发方式</span></button>
+
   <button class="btn" id="clear" style="background:#8a2b2b">清空日志</button>
 
   <div class="log" id="log">等待操作…</div>
@@ -87,7 +93,10 @@
     · 若 ①~⑦ 点了全都无反应、只有 ⑧ 能跳 → 说明极氪浏览器<b>屏蔽了 intent:// 自定义协议</b>，这条路到此为止。<br>
     · 若 ②「关于」能打开，但你进去点版本号仍无反应 → 印证<b>开发者入口是被厂商禁用</b>，不是够不着页面，网页方案帮不上。<br>
     · 若 ③「开发者选项」能直接打开且里面有开关 → <b>这是唯一惊喜</b>，说明可用 intent 绕过点版本号，进去打开「USB 调试」即可走 adb。<br>
-    · 每次点按钮前先记下现象（成功/失败），也方便后续判断。
+    · 每次点按钮前先记下现象（成功/失败），也方便后续判断。<br>
+    · ⑨⑩ 用来区分「屏蔽整个 intent 协议」还是「只屏蔽 &lt;a href&gt; 点击」：<br>
+    &nbsp;&nbsp;- 若 ①~⑦ 无反应但 ⑨ 或 ⑩ 能跳 → 只是拦了 &lt;a&gt; 点击，改用 JS 触发即可绕过。<br>
+    &nbsp;&nbsp;- 若 ⑨⑩ 也无反应 → 浏览器彻底屏蔽 intent 协议，网页路线到此为止，需换浏览器或走工程码。
   </div>
 
   <script>
@@ -110,6 +119,20 @@
     });
     document.getElementById('clear').addEventListener('click', function () {
       logEl.textContent = '等待操作…';
+    });
+    // ⑨ 用 window.location.href 触发 intent：部分浏览器只拦 <a> 点击，不拦 location 赋值
+    document.getElementById('locJump').addEventListener('click', function () {
+      line('通过 location.href 触发：开发者选项');
+      window.location.href = 'intent:#Intent;action=android.settings.APPLICATION_DEVELOPMENT_SETTINGS;end';
+    });
+    // ⑩ 用隐藏 iframe 触发 intent：绕过点击劫持/手势校验类拦截
+    document.getElementById('iframeJump').addEventListener('click', function () {
+      line('通过隐藏 iframe 触发：系统设置主页');
+      var f = document.createElement('iframe');
+      f.style.display = 'none';
+      f.src = 'intent:#Intent;action=android.settings.SETTINGS;end';
+      document.body.appendChild(f);
+      setTimeout(function () { document.body.removeChild(f); }, 1000);
     });
     line('页面已加载，UA：' + navigator.userAgent);
   </script>
